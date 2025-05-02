@@ -1,0 +1,31 @@
+{
+  "name": "devices-api",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.19.4",
+    "vitest": "^3.1.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@vitest/coverage-v8": "^3.1.2",
+    "dotenv": "^16.5.0",
+    "drizzle-orm": "^0.43.1",
+    "elysia": "^1.2.25",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.3"
+  },
+  "scripts": {
+    "dev": "bun run --watch --loader tsx index.ts",
+    "build": "drizzle-kit generate --output ./drizzle/schema.ts",
+    "test": "vitest",
+    "db:generate_dev": "drizzle-kit generate",
+    "db:generate_prod": "drizzle-kit generate --config=drizzle-prod.config.ts",
+    "db:push": "drizzle-kit push:pg"
+  }
+}
