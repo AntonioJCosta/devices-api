@@ -54,7 +54,7 @@ describe('Device Service', () => {
     const mockDevice: Device = {
         id: 1,
         name: 'Test Device',
-        brand: 'Test Brand',
+        brand: 'Samsung',
         state: 'available',
         createdAt: new Date(),
     };
@@ -77,7 +77,7 @@ describe('Device Service', () => {
     describe('createDevice', () => {
 
         it('should call db.insert with correct values and return the new device', async () => {
-            const inputData = { name: 'New Device', brand: 'New Brand', state: 'inactive' as const };
+            const inputData = { name: 'New Device', brand: 'Apple' as const, state: 'inactive' as const };
             const expectedReturnedDevice = { ...inputData, id: 5, createdAt: new Date() };
             // Override the default returning mock for this specific test
             mockedDbReturning.mockResolvedValueOnce([expectedReturnedDevice]);
@@ -91,7 +91,7 @@ describe('Device Service', () => {
         });
 
         it('should throw error if db.insert fails (returns empty array)', async () => {
-            const inputData = { name: 'Fail Device', brand: 'Fail Brand', state: 'available' as const };
+            const inputData = { name: 'Fail Device', brand: 'Apple' as const, state: 'available' as const };
             mockedDbReturning.mockResolvedValueOnce([]);
             await expect(deviceService.createDevice(inputData)).rejects.toThrow('Failed to create a new device');
         });
@@ -133,7 +133,7 @@ describe('Device Service', () => {
 
     describe('getDeviceById', () => {
         it('should call db.select with correct ID and return device if found', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             const result = await deviceService.getDeviceById(id);
 
             expect(db.select).toHaveBeenCalled();
@@ -159,7 +159,7 @@ describe('Device Service', () => {
         // Domain Validation: Name property cannot be updated if the device is in-use
 
         it('should throw error if name is updated for an in-use device', async () => {
-            const id = mockDeviceInUse.id;
+            const {id} = mockDeviceInUse;
             const updateData = { name: 'Updated Name' };
             vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDeviceInUse);
 
@@ -169,8 +169,8 @@ describe('Device Service', () => {
         // Domain Validation: Brand property cannot be updated if the device is in-use
 
         it('should throw error if brand is updated for an in-use device', async () => {
-            const id = mockDeviceInUse.id;
-            const updateData = { brand: 'Updated Brand' };
+            const {id} = mockDeviceInUse;
+            const updateData = { brand: 'Sony' as const};
             vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDeviceInUse);
 
             await expect(deviceService.updateDevice(id, updateData)).rejects.toThrow("Cannot update brand for a device that is 'in-use'");
@@ -178,7 +178,7 @@ describe('Device Service', () => {
 
         // Domain Validation: Creation time cannot be updated
         it('should throw error if createdAt is updated', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             const updateData: Partial<Device> = { createdAt: new Date() };
             vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
 
@@ -187,7 +187,7 @@ describe('Device Service', () => {
         );
 
         it('should allow updating state of an in-use device', async () => {
-            const id = mockDeviceInUse.id;
+            const {id} = mockDeviceInUse;
             const updateData = { state: 'inactive' as const };
             const expectedUpdatedDevice = { ...mockDeviceInUse, state: 'inactive' };
             vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDeviceInUse);
@@ -202,7 +202,7 @@ describe('Device Service', () => {
         });
 
         it('should return null if update returns no rows', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             const updateData = { name: 'Updated Name' };
             vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
             // Simulate update returning empty array
@@ -216,14 +216,14 @@ describe('Device Service', () => {
     describe('deleteDevice', () => {
         // Domain Validation: Device cannot be deleted if it is in-use
         it('should throw error if device is in-use', async () => {
-            const id = mockDeviceInUse.id;
+            const {id} = mockDeviceInUse;
             vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDeviceInUse);
             await expect(deviceService.deleteDevice(id)).rejects.toThrow("Cannot delete a device that is 'in-use'");
         });
 
 
         it('should delete an available device successfully and return true', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
             // Explicitly set mock using count
             mockedDbDeleteWhere.mockResolvedValueOnce({ count: 1 }); // Changed from rowCount
@@ -236,7 +236,7 @@ describe('Device Service', () => {
         });
 
         it('should return false if delete operation affects 0 rows', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
             // Override delete mock to simulate 0 rows affected using count
             mockedDbDeleteWhere.mockResolvedValueOnce({ count: 0 }); // Changed from rowCount
@@ -247,7 +247,7 @@ describe('Device Service', () => {
         });
 
     it('should return false if delete operation affects 0 rows', async () => {
-        const id = mockDevice.id;
+        const {id} = mockDevice;
         vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
         // Override delete mock to simulate 0 rows affected
         mockedDbDeleteWhere.mockResolvedValueOnce({ rowCount: 0 });

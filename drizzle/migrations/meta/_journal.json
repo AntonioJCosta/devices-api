@@ -5,8 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1746026562522,
-      "tag": "0000_flippant_tenebrous",
+      "when": 1746198570724,
+      "tag": "0000_create_table_devices",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1746198683601,
+      "tag": "0001_create_devices_collums_constrains",
       "breakpoints": true
     }
   ]

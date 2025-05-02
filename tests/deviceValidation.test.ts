@@ -5,7 +5,7 @@ describe('Device Validation Schemas', () => {
 
     describe('createDeviceSchema', () => {
         it('should validate a correct device object', () => {
-            const validDevice = { name: 'Test Device', brand: 'Test Brand', state: 'available' as const };
+            const validDevice = { name: 'Test Device', brand: 'Samsung', state: 'available' as const };
             const result = createDeviceSchema.safeParse(validDevice);
             expect(result.success).toBe(true);
         });
@@ -52,7 +52,7 @@ describe('Device Validation Schemas', () => {
         });
 
         it('should validate a partial update with only brand', () => {
-            const partialUpdate = { brand: 'New Brand' };
+            const partialUpdate = { brand: 'Huawei' };
             const result = updateDeviceSchema.safeParse(partialUpdate);
             expect(result.success).toBe(true);
              if (result.success) {

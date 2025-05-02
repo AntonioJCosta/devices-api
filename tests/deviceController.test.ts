@@ -67,7 +67,7 @@ describe('Device Controller', () => {
     const mockDevice: Device = {
         id: 1,
         name: 'Test Device',
-        brand: 'Test Brand',
+        brand: 'Samsung',
         state: 'available',
         createdAt: new Date(),
     };
@@ -107,7 +107,7 @@ describe('Device Controller', () => {
         });
 
         it('should call service and return 201 on successful creation', async () => {
-            const inputData = { name: 'New', brand: 'Brand', state: 'available' as const };
+            const inputData = { name: 'New', brand: 'Samsung' as const, state: 'available' as const };
             const createdDevice = { ...inputData, id: 10, createdAt: new Date() };
             vi.mocked(createDeviceSchema.safeParse).mockReturnValue({ success: true, data: inputData } as any);
             vi.mocked(deviceService.createDevice).mockResolvedValue(createdDevice);
@@ -164,7 +164,7 @@ describe('Device Controller', () => {
     describe('getById', () => {
         it('should return 400 if ID is not a number', async () => {
             // Specify the expected params type { id: string }
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             const ctx = mockContext({ id: 'abc' } as { id: string });
             const result = await deviceController.getById(ctx as any);
                expect(ctx.set.status).toBe(400);
@@ -173,7 +173,7 @@ describe('Device Controller', () => {
         });
 
         it('should call service with ID and return device if found', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             vi.mocked(deviceService.getDeviceById).mockResolvedValue(mockDevice);
             const ctx = mockContext({ id: String(id) });
 
@@ -197,7 +197,7 @@ describe('Device Controller', () => {
         });
 
         it('should return 500 if service throws error', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             vi.mocked(deviceService.getDeviceById).mockRejectedValue(new Error('DB error'));
             const ctx = mockContext({ id: String(id) });
 
@@ -220,7 +220,7 @@ describe('Device Controller', () => {
         });
 
          it('should return 400 if validation fails', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             const validationError = { success: false, error: { format: () => ({ _errors: ['Invalid state'] }) } };
             vi.mocked(updateDeviceSchema.safeParse).mockReturnValue(validationError as any);
             const ctx = mockContext({ id: String(id) }, { state: 'broken' });
@@ -234,7 +234,7 @@ describe('Device Controller', () => {
         });
 
          it('should return 400 if validated data is empty object', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             vi.mocked(updateDeviceSchema.safeParse).mockReturnValue({ success: true, data: {} } as any);
             const ctx = mockContext({ id: String(id) }, {}); // Empty body leads to empty validated data
 
@@ -247,7 +247,7 @@ describe('Device Controller', () => {
         });
 
         it('should call service and return 200 on successful update', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             const updateData = { name: 'Updated Name' };
             const updatedDevice = { ...mockDevice, name: 'Updated Name' };
             vi.mocked(updateDeviceSchema.safeParse).mockReturnValue({ success: true, data: updateData } as any);
@@ -277,7 +277,7 @@ describe('Device Controller', () => {
         });
 
         it('should return 400 if service throws domain validation error', async () => {
-            const id = mockDeviceInUse.id;
+            const {id} = mockDeviceInUse;
             const updateData = { name: 'New Name' };
             const errorMsg = "Cannot update name for a device that is 'in-use'";
             vi.mocked(updateDeviceSchema.safeParse).mockReturnValue({ success: true, data: updateData } as any);
@@ -292,7 +292,7 @@ describe('Device Controller', () => {
         });
 
         it('should return 500 if service throws other error', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             const updateData = { state: 'inactive' as const };
             vi.mocked(updateDeviceSchema.safeParse).mockReturnValue({ success: true, data: updateData } as any);
             vi.mocked(deviceService.updateDevice).mockRejectedValue(new Error('Generic DB Error'));
@@ -316,7 +316,7 @@ describe('Device Controller', () => {
         });
 
         it('should call service and return 204 on successful delete', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             vi.mocked(deviceService.deleteDevice).mockResolvedValue(true);
             const ctx = mockContext({ id: String(id) });
 
@@ -340,7 +340,7 @@ describe('Device Controller', () => {
         });
 
         it('should return 400 if service throws domain validation error', async () => {
-            const id = mockDeviceInUse.id;
+            const {id} = mockDeviceInUse;
             const errorMsg = "Cannot delete a device that is 'in-use'";
             vi.mocked(deviceService.deleteDevice).mockRejectedValue(new Error(errorMsg));
             const ctx = mockContext({ id: String(id) });
@@ -353,7 +353,7 @@ describe('Device Controller', () => {
         });
 
         it('should return 500 if service throws other error', async () => {
-            const id = mockDevice.id;
+            const {id} = mockDevice;
             vi.mocked(deviceService.deleteDevice).mockRejectedValue(new Error('Generic DB Error'));
             const ctx = mockContext({ id: String(id) });
 

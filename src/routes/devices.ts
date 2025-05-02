@@ -1,26 +1,36 @@
 import { Elysia, t } from 'elysia'
 import { deviceController } from '../controllers/deviceController'
 
-const paramsWithId = t.Object({ id: t.Numeric() }) // Use Numeric for automatic conversion/validation
 
+/**
+ * Defines a reusable validation schema for routes expecting a numeric ID parameter.
+ */
+const paramsWithId = t.Object({ id: t.Numeric() })
+
+/**
+ * Defines the routes for the /devices endpoint.
+ */
 export default new Elysia({ prefix: '/devices' })
+  // POST /devices - Create a new device
   .post('', deviceController.create, {
     detail: {
       summary: 'Create a new device',
       tags: ['Devices'],
-      description: 'Adds a new device to the system.',
-      body: { description: 'Device details: name, brand, and state (available, in-use, inactive).' },
+      description: 'Adds a new device to the system. Requires name, brand, and state.',
+      body: { description: 'Device details: name (string, min 5), brand (string, enum, min 5), and state (enum).' },
       responses: {
         201: { description: 'Device created successfully' },
-        400: { description: 'Invalid input data' },
+        400: { description: 'Invalid input data (validation error)' },
+        409: { description: 'Conflict - Device name already exists' },
         500: { description: 'Internal server error' }
       }
     }
   })
+  // GET /devices - Fetch all devices with optional filtering
   .get('', deviceController.getAll, {
     query: t.Object({
-      brand: t.Optional(t.String({ minLength: 1 })),
-      state: t.Optional(t.String({
+      brand: t.Optional(t.String({ minLength: 1 })), 
+      state: t.Optional(t.String({ 
         enum: ['available', 'in-use', 'inactive'],
         error: "State must be one of 'available', 'in-use', 'inactive'"
       }))
@@ -30,7 +40,7 @@ export default new Elysia({ prefix: '/devices' })
       tags: ['Devices'],
       description: 'Retrieves a list of all devices, optionally filtered by brand and/or state.',
       parameters: [
-        { in: 'query', name: 'brand', schema: { type: 'string' }, description: 'Filter devices by brand name.' },
+        { in: 'query', name: 'brand', schema: { type: 'string', enum: ['Apple', 'Samsung', 'Google', 'Sony', 'Huawei'] }, description: 'Filter devices by brand.' },
         { in: 'query', name: 'state', schema: { type: 'string', enum: ['available', 'in-use', 'inactive'] }, description: 'Filter devices by state.' }
       ],
       responses: {
@@ -39,8 +49,9 @@ export default new Elysia({ prefix: '/devices' })
       }
     }
   })
+  // GET /devices/:id - Fetch a single device by ID
   .get('/:id', deviceController.getById, {
-    params: paramsWithId,
+    params: paramsWithId, // Use shared ID validation schema
     detail: {
       summary: 'Fetch a single device by ID',
       tags: ['Devices'],
@@ -56,8 +67,9 @@ export default new Elysia({ prefix: '/devices' })
       }
     }
   })
+  // PATCH /devices/:id - Partially update a device
   .patch('/:id', deviceController.update, {
-    params: paramsWithId,
+    params: paramsWithId, // Use shared ID validation schema
     detail: {
       summary: 'Partially update a device',
       tags: ['Devices'],
@@ -65,17 +77,19 @@ export default new Elysia({ prefix: '/devices' })
       parameters: [
         { in: 'path', name: 'id', required: true, schema: { type: 'integer' }, description: 'The unique identifier of the device to update.' }
       ],
-      body: { description: 'Fields to update (name, brand, state). At least one field must be provided.' },
+      body: { description: 'Fields to update (name, brand, state). At least one field must be provided. Follows validation rules (min length, enums).' },
       responses: {
         200: { description: 'Device updated successfully' },
-        400: { description: 'Invalid input data or business rule violation (e.g., updating name/brand while in-use)' },
+        400: { description: 'Invalid input data or business rule violation (e.g., updating name/brand while in-use, empty payload)' },
         404: { description: 'Device not found' },
+        409: { description: 'Conflict - Updated device name already exists for another device' },
         500: { description: 'Internal server error' }
       }
     }
   })
+  // DELETE /devices/:id - Delete a device
   .delete('/:id', deviceController.delete, {
-    params: paramsWithId,
+    params: paramsWithId, // Use shared ID validation schema
     detail: {
       summary: 'Delete a device',
       tags: ['Devices'],
