@@ -3,6 +3,18 @@ import { deviceService } from '../src/services/deviceService'
 import { devices, type Device } from '../drizzle/schema'
 import { eq } from 'drizzle-orm'
 
+// Mock the config/env module
+vi.mock('../src/config/env', () => ({
+    env: {
+        DATABASE_URL: 'postgresql://testuser:testpass@localhost:5432/testdb',
+        APP_PORT: 3001,
+        APP_HOST: 'localhost',
+        LOG_LEVEL: 'info',
+    },
+    NODE_ENV: process.env.NODE_ENV || 'test',
+}));
+
+
 vi.mock('../src/db/client', () => {
     const mockReturning = vi.fn();
     const mockWhere = vi.fn(); // Mock for the .where() method call itself
@@ -51,7 +63,7 @@ const mockedQueryBuilderThen = (db as any)._mockQueryBuilderThen;
 
 
 describe('Device Service', () => {
-    const mockDevice: Device = {
+    const mockDeviceAvaliable: Device = {
         id: 1,
         name: 'Test Device',
         brand: 'Samsung',
@@ -59,18 +71,22 @@ describe('Device Service', () => {
         createdAt: new Date(),
     };
     const mockDeviceInUse: Device = {
-        ...mockDevice,
         id: 2,
+        name: 'In-Use Device',
+        brand: 'Samsung',
         state: 'in-use',
+        createdAt: new Date(),
     };
 
 
     beforeEach(() => {
         vi.clearAllMocks();
 
-        mockedDbWhere.mockResolvedValue([mockDevice]);
-        mockedDbReturning.mockResolvedValue([mockDevice]);
+        mockedDbWhere.mockResolvedValue([mockDeviceAvaliable, mockDeviceInUse]);
+        mockedDbReturning.mockResolvedValue([mockDeviceAvaliable, mockDeviceInUse]);
         mockedDbDeleteWhere.mockResolvedValue({ count: 1 });
+
+
 
     });
 
@@ -93,13 +109,13 @@ describe('Device Service', () => {
         it('should throw error if db.insert fails (returns empty array)', async () => {
             const inputData = { name: 'Fail Device', brand: 'Apple' as const, state: 'available' as const };
             mockedDbReturning.mockResolvedValueOnce([]);
-            await expect(deviceService.createDevice(inputData)).rejects.toThrow('Failed to create a new device');
+            await expect(deviceService.createDevice(inputData)).rejects.toThrow('Failed to create device in repository');
         });
     });
 
     describe('getAllDevices', () => {
         it('should call db.select without where when no filters are provided', async () => {
-            const mockResult = [mockDevice, mockDeviceInUse];
+            const mockResult = [mockDeviceAvaliable, mockDeviceInUse];
             mockedQueryBuilderThen.mockImplementationOnce((resolve: (value: Device[]) => void) => resolve(mockResult));
 
             const result = await deviceService.getAllDevices({});
@@ -113,7 +129,7 @@ describe('Device Service', () => {
         it('should call db.select with brand and state filters using AND', async () => {
             const brand = 'Test Brand';
             const state = 'available';
-            const mockResult = [mockDevice];
+            const mockResult = [mockDeviceAvaliable];
             // Configure the 'then' mock for this specific case to return the filtered result
             mockedQueryBuilderThen.mockImplementationOnce((resolve: (value: Device[]) => void) => resolve(mockResult));
 
@@ -133,12 +149,12 @@ describe('Device Service', () => {
 
     describe('getDeviceById', () => {
         it('should call db.select with correct ID and return device if found', async () => {
-            const {id} = mockDevice;
+            const {id} = mockDeviceAvaliable;
             const result = await deviceService.getDeviceById(id);
 
             expect(db.select).toHaveBeenCalled();
             expect(mockedDbWhere).toHaveBeenCalledWith(expect.objectContaining({ type: 'eq', field: 'id', value: id }));
-            expect(result).toEqual(mockDevice);
+            expect(result).toEqual(mockDeviceAvaliable);
         });
 
         it('should return undefined if device not found', async () => {
@@ -178,9 +194,9 @@ describe('Device Service', () => {
 
         // Domain Validation: Creation time cannot be updated
         it('should throw error if createdAt is updated', async () => {
-            const {id} = mockDevice;
+            const {id} = mockDeviceAvaliable;
             const updateData: Partial<Device> = { createdAt: new Date() };
-            vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
+            vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDeviceAvaliable);
 
             await expect(deviceService.updateDevice(id, updateData)).rejects.toThrow('Cannot update createdAt property');
         }
@@ -202,9 +218,9 @@ describe('Device Service', () => {
         });
 
         it('should return null if update returns no rows', async () => {
-            const {id} = mockDevice;
+            const {id} = mockDeviceAvaliable;
             const updateData = { name: 'Updated Name' };
-            vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
+            vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDeviceAvaliable);
             // Simulate update returning empty array
             mockedDbReturning.mockResolvedValueOnce([]);
 
@@ -223,8 +239,8 @@ describe('Device Service', () => {
 
 
         it('should delete an available device successfully and return true', async () => {
-            const {id} = mockDevice;
-            vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
+            const {id} = mockDeviceAvaliable;
+            vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDeviceAvaliable);
             // Explicitly set mock using count
             mockedDbDeleteWhere.mockResolvedValueOnce({ count: 1 }); // Changed from rowCount
 
@@ -236,8 +252,8 @@ describe('Device Service', () => {
         });
 
         it('should return false if delete operation affects 0 rows', async () => {
-            const {id} = mockDevice;
-            vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
+            const {id} = mockDeviceAvaliable;
+            vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDeviceAvaliable);
             // Override delete mock to simulate 0 rows affected using count
             mockedDbDeleteWhere.mockResolvedValueOnce({ count: 0 }); // Changed from rowCount
 
@@ -247,8 +263,8 @@ describe('Device Service', () => {
         });
 
     it('should return false if delete operation affects 0 rows', async () => {
-        const {id} = mockDevice;
-        vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDevice);
+        const {id} = mockDeviceAvaliable;
+        vi.spyOn(deviceService, 'getDeviceById').mockResolvedValueOnce(mockDeviceAvaliable);
         // Override delete mock to simulate 0 rows affected
         mockedDbDeleteWhere.mockResolvedValueOnce({ rowCount: 0 });
 

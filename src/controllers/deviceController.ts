@@ -13,7 +13,7 @@ export const deviceController = {
    * @param ctx - The Elysia context object, expecting the device data in the body.
    * @returns The newly created device object with status 201, or an error response.
    */
-  async create(ctx: Context<{ body: unknown }>) {
+  async create(ctx: Context) {
     try {
       const validationResult = createDeviceSchema.safeParse(ctx.body)
 
@@ -60,25 +60,27 @@ export const deviceController = {
    * @param ctx - The Elysia context object, expecting the device ID as a URL parameter.
    * @returns The requested device object, or a 404/400/500 error response.
    */
-  async getById(ctx: Context<{ params: { id: string } }>) {
+  async getById(ctx: Context<{ params: { id: number } }>) {
     try {
-      const id = parseInt(ctx.params.id, 10)
-      if (isNaN(id)) {
-        ctx.set.status = 400
-        return { error: 'Invalid device ID format' }
-      }
+      const {id} = ctx.params
+
       const device = await deviceService.getDeviceById(id)
       if (!device) {
         ctx.set.status = 404
         return { error: 'Device not found' }
       }
       return device
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = 'Failed to fetch device';
+      if (error instanceof Error) {
+          errorMessage = error.message; 
+      }
       logger.error({ err: error, params: ctx.params }, "Error fetching device by ID");
       ctx.set.status = 500
-      return { error: 'Failed to fetch device' }
+      return { error: errorMessage }
     }
   },
+
 
   /**
    * Handles partially updating an existing device by its ID (PATCH).
@@ -86,7 +88,7 @@ export const deviceController = {
    * @param ctx - The Elysia context object, expecting ID in params and partial update data in body.
    * @returns The updated device object, or an error response (400, 404, 409, 500).
    */
-  async update(ctx: Context<{ params: { id: string }, body: unknown }>) {
+  async update(ctx: Context<{ params: { id: string }}>) {
     let id: number | undefined;
     try {
       id = parseInt(ctx.params.id, 10)
@@ -117,6 +119,11 @@ export const deviceController = {
       }
       return updatedDevice
     } catch (error: any) {
+      if (error.message === 'Device not found') {
+        ctx.set.status = 404;
+        logger.warn({ deviceId: id, err: error.message }, "Device not found during delete attempt");
+        return { error: 'Device not found' };
+      }
       if (error.message?.includes("Cannot update") || error.message?.includes("already exists")) {
         const statusCode = error.message.includes("already exists") ? 409 : 400;
         ctx.set.status = statusCode;
@@ -135,7 +142,7 @@ export const deviceController = {
    * @param ctx - The Elysia context object, expecting ID in params and full device data in body.
    * @returns The updated device object, or an error response (400, 404, 409, 500).
    */
-  async updateFull(ctx: Context<{ params: { id: string }, body: unknown }>) {
+  async updateFull(ctx: Context<{ params: { id: string }}>) {
     let id: number | undefined;
     try {
       id = parseInt(ctx.params.id, 10)
@@ -161,6 +168,11 @@ export const deviceController = {
       }
       return updatedDevice
     } catch (error: any) {
+      if (error.message === 'Device not found') {
+        ctx.set.status = 404;
+        logger.warn({ deviceId: id, err: error.message }, "Device not found during delete attempt");
+        return { error: 'Device not found' };
+      }
       // Handle specific domain validation errors thrown by the service layer
       if (error.message?.includes("Cannot update") || error.message?.includes("already exists")) {
         const statusCode = error.message.includes("already exists") ? 409 : 400;
@@ -189,13 +201,15 @@ export const deviceController = {
         return { error: 'Invalid device ID format' }
       }
 
-      const success = await deviceService.deleteDevice(id)
-      if (!success) {
+      await deviceService.deleteDevice(id)
+      ctx.set.status = 204
+      return { message: 'Device deleted successfully' }
+    } catch (error: any) {
+      if (error.message === 'Device not found') {
         ctx.set.status = 404;
+        logger.warn({ deviceId: id, err: error.message }, "Device not found during delete attempt");
         return { error: 'Device not found' };
       }
-      ctx.set.status = 204
-    } catch (error: any) {
       // Handle specific domain validation errors thrown by the service layer
       if (error.message?.includes("Cannot delete")) {
         ctx.set.status = 400;

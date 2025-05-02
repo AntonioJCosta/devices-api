@@ -1,5 +1,6 @@
-import { pgTable, serial, text, timestamp, check } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"; // Import sql
+// filepath: /opt/challenges/1global/devices-api/drizzle/schema.ts
+import { pgTable, serial, text, timestamp, check, index } from "drizzle-orm/pg-core" // Adicione 'index'
+import { sql } from "drizzle-orm";
 
 /**
  * Defines the schema for the 'devices' table in the PostgreSQL database.
@@ -18,11 +19,13 @@ export const devices = pgTable("devices", {
   /** The timestamp when the device record was created (defaults to the current time). */
   createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
 },
-(table) => { 
-  return [
-    check("devices_name_length_check", sql`length(${table.name}) >= 5`),
-    check("devices_brand_value_check", sql`${table.brand} IN ('Apple', 'Samsung', 'Google', 'Sony', 'Huawei')`),
-  ];
+(table) => {
+  return {
+    nameLengthCheck: check("devices_name_length_check", sql`length(${table.name}) >= 5`),
+    brandValueCheck: check("devices_brand_value_check", sql`${table.brand} IN ('Apple', 'Samsung', 'Google', 'Sony', 'Huawei')`),
+    brandIndex: index("brand_idx").on(table.brand),
+    stateIndex: index("state_idx").on(table.state),
+  };
 })
 
 /**

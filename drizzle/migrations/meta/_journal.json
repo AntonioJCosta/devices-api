@@ -15,6 +15,13 @@
       "when": 1746198683601,
       "tag": "0001_create_devices_collums_constrains",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1746202229384,
+      "tag": "0002_create_indexes",
+      "breakpoints": true
     }
   ]
 }

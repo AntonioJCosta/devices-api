@@ -13,11 +13,13 @@ export const deviceService = {
    */
   async createDevice(data: CreateDeviceInput): Promise<Device> {
     try {
-        return await deviceRepository.create(data);
-    } catch(error) {
-        logger.error({ err: error, data }, "Error in repository create");
-        // Propagate a generic error to the controller layer
-        throw new Error('Failed to create a new device');
+      return await deviceRepository.create(data);
+    } catch (error) {
+      logger.error({ err: error, data }, "Error in repository create");
+      if (error instanceof Error) {
+        throw new Error(error.message);
+      }
+      throw new Error("An unknown error occurred");
     }
   },
 
@@ -40,6 +42,15 @@ export const deviceService = {
   },
 
   /**
+   * Retrieves a single device by its name.
+   * @param name - The name of the device to retrieve.
+   * @returns The device if found, otherwise undefined.
+   */
+  async getDeviceByName(name: string): Promise<Device | undefined> {
+    return await deviceRepository.findByName(name)
+  },
+
+  /**
    * Partially updates an existing device.
    * @param id - The ID of the device to update.
    * @param data - The partial data to update.
@@ -47,18 +58,14 @@ export const deviceService = {
    * @throws Error on business rule violations (e.g., updating name/brand while in-use, duplicate name).
    */
   async updateDevice(id: number, data: UpdateDeviceInput): Promise<Device | null> {
-    const existingDevice = await deviceRepository.findById(id)
+    const existingDevice = await this.getDeviceById(id);
     if (!existingDevice) {
-      return null
+      throw new Error(`Device not found`)
     }
 
-    // --- Name Uniqueness Check for Update ---
-    if (data.name && data.name !== existingDevice.name) {
-      const conflictingDevice = await deviceRepository.findByName(data.name);
-      if (conflictingDevice && conflictingDevice.id !== id) {
-         logger.warn({ deviceId: id, newName: data.name, conflictingId: conflictingDevice.id }, "Attempted to update device name to one that already exists");
-         throw new Error(`Device name '${data.name}' already exists.`);
-      }
+    // Domain Validation: createdAt property cannot be updated.
+    if ('createdAt' in data) {
+      throw new Error('Cannot update createdAt property');
     }
 
     // Domain Validation: Prevent modification of name and brand for devices currently in use.
@@ -71,16 +78,25 @@ export const deviceService = {
       }
     }
 
+    // --- Name Uniqueness Check for Update ---
+    if (data.name && data.name !== existingDevice.name) {
+      const conflictingDevice = await deviceRepository.findByName(data.name);
+      if (conflictingDevice && conflictingDevice.id !== id) {
+        logger.warn({ deviceId: id, newName: data.name, conflictingId: conflictingDevice.id }, "Attempted to update device name to one that already exists");
+        throw new Error(`Device name '${data.name}' already exists.`);
+      }
+    }
+
     try {
-        const updated = await deviceRepository.update(id, data);
-        if (!updated) {
-            logger.warn({ deviceId: id, data }, "Repository returned null unexpectedly during partial update after existence check");
-            return null;
-        }
-        return updated;
+      const updated = await deviceRepository.update(id, data);
+      if (!updated) {
+        logger.warn({ deviceId: id, data }, "Repository returned null unexpectedly during partial update after existence check");
+        return null;
+      }
+      return updated;
     } catch (error: any) {
-         logger.error({ err: error, deviceId: id, data }, "Error during repository partial update");
-         throw error;
+      logger.error({ err: error, deviceId: id, data }, "Error during repository partial update");
+      throw error;
     }
   },
 
@@ -92,15 +108,14 @@ export const deviceService = {
    * @throws Error on business rule violations (e.g., updating name/brand while in-use, duplicate name).
    */
   async updateFullDevice(id: number, data: FullUpdateDeviceInput): Promise<Device | null> {
-    const existingDevice = await deviceRepository.findById(id);
+    const existingDevice = await this.getDeviceById(id);
     if (!existingDevice) {
       return null;
     }
 
     // --- Name Uniqueness Check for Update ---
-    // Check only if the name is actually changing
     if (data.name !== existingDevice.name) {
-      const conflictingDevice = await deviceRepository.findByName(data.name);
+      const conflictingDevice = await this.getDeviceByName(data.name);
       if (conflictingDevice && conflictingDevice.id !== id) {
         logger.warn({ deviceId: id, newName: data.name, conflictingId: conflictingDevice.id }, "Attempted to update device name to one that already exists (full update)");
         throw new Error(`Device name '${data.name}' already exists.`);
@@ -119,15 +134,15 @@ export const deviceService = {
     }
 
     try {
-        const updated = await deviceRepository.update(id, data);
-         if (!updated) {
-            logger.warn({ deviceId: id, data }, "Repository returned null unexpectedly during full update after existence check");
-            return null; 
-        }
-        return updated;
+      const updated = await deviceRepository.update(id, data);
+      if (!updated) {
+        logger.warn({ deviceId: id, data }, "Repository returned null unexpectedly during full update after existence check");
+        return null;
+      }
+      return updated;
     } catch (error: any) {
-         logger.error({ err: error, deviceId: id, data }, "Error during repository full update");
-         throw error;
+      logger.error({ err: error, deviceId: id, data }, "Error during repository full update");
+      throw error;
     }
   },
 
@@ -138,7 +153,7 @@ export const deviceService = {
    * @throws Error if attempting to delete a device that is 'in-use'.
    */
   async deleteDevice(id: number): Promise<boolean> {
-    const existingDevice = await deviceRepository.findById(id)
+    const existingDevice = await this.getDeviceById(id)
     if (!existingDevice) {
       return false
     }

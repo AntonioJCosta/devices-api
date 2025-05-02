@@ -67,6 +67,28 @@ export default new Elysia({ prefix: '/devices' })
       }
     }
   })
+    // PUT /devices/:id - Fully update (replace) a device
+    .put('/:id', deviceController.updateFull, {
+      params: paramsWithId,
+      // Use the corrected function name
+      detail: {
+        summary: 'Fully update (replace) a device',
+        tags: ['Devices'],
+        description: 'Replaces all properties of an existing device. Requires all fields (name, brand, state). Name and brand cannot be updated if the device state remains "in-use" unless the state is also changed in the same request.',
+        parameters: [
+          { in: 'path', name: 'id', required: true, schema: { type: 'integer', example: 2 }, description: 'The unique identifier of the device to replace.' }
+        ],
+        responses: {
+          200: {
+            description: 'Device updated successfully',
+          },
+          400: { description: 'Invalid input data (missing/invalid fields) or business rule violation' },
+          404: { description: 'Device not found'},
+          409: { description: 'Conflict - Updated device name already exists'},
+          500: { description: 'Internal server error'}
+        }
+      }
+    })
   // PATCH /devices/:id - Partially update a device
   .patch('/:id', deviceController.update, {
     params: paramsWithId, // Use shared ID validation schema

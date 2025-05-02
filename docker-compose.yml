@@ -18,22 +18,9 @@ services:
       POSTGRES_DB: devices
     ports:
       - "5432:5432"
-    volumes: # Added volume for persistence
+    volumes: 
       - postgres_data:/var/lib/postgresql/data
 
-  pgadmin: # Added pgAdmin service
-    image: dpage/pgadmin4
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com # Change this email
-      PGADMIN_DEFAULT_PASSWORD: admin # Change this password
-    ports:
-      - "5050:80" # Access pgAdmin on http://localhost:5050
-    depends_on:
-      - db
-    volumes: # Added volume for pgAdmin data persistence
-      - pgadmin_data:/var/lib/pgadmin
-
-volumes: # Define named volumes
+volumes: 
   postgres_data:
   pgadmin_data:
