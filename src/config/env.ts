@@ -2,16 +2,16 @@ import { config } from "dotenv";
 import { z } from "zod";
 
 /**
- * Determines the current environment (e.g., "local", "development", "production").
- * Defaults to "local" if NODE_ENV is not explicitly set.
+ * Determines the current environment (e.g., "development", "production").
+ * If NODE_ENV is not set, it remains undefined.
  */
-const NODE_ENV = process.env.NODE_ENV || "local";
+const {NODE_ENV} = process.env;
 
 /**
- * Constructs the path to the environment file based on the current NODE_ENV.
- * Example: ./.env.production, ./.env.local
+ * Constructs the path to the environment file.
+ * Uses .env.${NODE_ENV} if NODE_ENV is set, otherwise defaults to .env.
  */
-const envFile = `./.env.${NODE_ENV}`;
+const envFile = NODE_ENV ? `./.env.${NODE_ENV}` : './.env';
 // Load environment variables from the determined file path.
 config({ path: envFile });
 
@@ -25,8 +25,16 @@ const envSchema = z.object({
     APP_PORT: z.coerce.number().default(3000),
     /** The host address for the server. */
     APP_HOST: z.string().default("localhost"),
-    /** The connection string for the PostgreSQL database. */
-    DATABASE_URL: z.string().url("Invalid DATABASE_URL format"),
+    /** The name of the database. */
+    DB_NAME: z.string().default("postgres"),
+    /** The username for database authentication. */
+    DB_USER: z.string().default("postgres"),
+    /** The password for database authentication. */
+    DB_PASSWORD: z.string().default("postgres"),
+    /** The host address of the database server. */
+    DB_HOST: z.string().default("localhost"),
+    /** The port on which the database server is running. */
+    DB_PORT: z.coerce.number().default(5432),
     /** The minimum level for logging messages. */
     LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
 });
@@ -37,8 +45,9 @@ const envSchema = z.object({
  * Provides typed access to environment variables.
  */
 const env = envSchema.parse(process.env);
+const DB_URL = `postgresql://${env.DB_USER}:${env.DB_PASSWORD}@${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`;
 
 /**
  * Exports the validated environment variables (`env`) and the determined environment name (`NODE_ENV`).
  */
-export { env, NODE_ENV };
+export { env, NODE_ENV, DB_URL };

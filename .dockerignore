@@ -1,0 +1,33 @@
+# filepath: /opt/challenges/1global/devices-api/.dockerignore
+# Git files
+.git
+.gitignore
+
+# Node modules (install them within the Dockerfile)
+node_modules
+
+# Environment files (should be injected at runtime)
+# .env*
+
+# Logs
+*.log
+logs/
+
+# Build artifacts (if any)
+dist
+build
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Other specific files/folders to ignore
+scripts/
+README.md
+
+# vscode settings
+.vscode/
+
+# Http files
+*.http

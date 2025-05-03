@@ -1,26 +1,38 @@
 version: '3.9'
 
 services:
-  api:
-    build: .
-    ports:
-      - "3000:3000" # Assuming your API runs on 3000 inside the container
-    env_file: .env
-    depends_on:
-      - db
-
-  db:
+  postgres_db:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: devices
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
-    volumes: 
+    volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  devices_api:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file: .env
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        echo 'Running migrations...' &&
+        bun run db:migrate &&
+        echo 'Starting API...' &&
+        bun run start:prod
+      "
 
-volumes: 
+volumes:
   postgres_data:
-  pgadmin_data:

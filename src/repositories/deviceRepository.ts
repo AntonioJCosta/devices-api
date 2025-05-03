@@ -59,11 +59,11 @@ export const deviceRepository = {
      */
     async create(data: NewDevice): Promise<Device> {
         // Check for existing device with the same name
-        // const existingDevice = await this.findByName(data.name);
-        // if (existingDevice) {
-        //     logger.warn({ name: data.name }, "Attempted to create device with duplicate name");
-        //     throw new Error(`Device name '${data.name}' already exists.`);
-        // }
+        const existingDevice = await this.findByName(data.name);
+        if (existingDevice) {
+            logger.warn({ name: data.name }, "Attempted to create device with duplicate name");
+            throw new Error(`Device name '${data.name}' already exists.`);
+        }
 
         // Proceed with creation if name is unique
         const [newDevice] = await db.insert(devices).values(data).returning()

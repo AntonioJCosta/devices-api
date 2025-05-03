@@ -105,7 +105,15 @@ export const deviceController = {
         return { error: 'Invalid input data', details: validationResult.error.format() }
       }
 
+      const body = ctx.body as any
+      logger.info(`Device partial update request received. Body: ${JSON.stringify(body)}`)
       const validatedData = validationResult.data
+      // Domain validation: Creation time cannot be updated
+      if (body.createdAt) {
+        ctx.set.status = 400;
+        logger.warn({ deviceId: id, body: ctx.body }, "Attempted to update read-only field 'createdAt'");
+        return { error: "The 'createdAt' field cannot be updated." };
+      }
 
       if (Object.keys(validatedData).length === 0) {
         ctx.set.status = 400;
@@ -200,8 +208,12 @@ export const deviceController = {
         ctx.set.status = 400
         return { error: 'Invalid device ID format' }
       }
-
-      await deviceService.deleteDevice(id)
+      
+      const isDeviceDeleted = await deviceService.deleteDevice(id)
+      if (!isDeviceDeleted) {
+        ctx.set.status = 404
+        return { error: 'Device not found' }
+      }
       ctx.set.status = 204
       return { message: 'Device deleted successfully' }
     } catch (error: any) {

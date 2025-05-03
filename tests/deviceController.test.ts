@@ -22,8 +22,8 @@ vi.mock('../src/services/deviceService', () => ({
 // Mock the config/env module
 vi.mock('../src/config/env', () => ({
     env: {
-        // Provide the mocked DATABASE_URL here
-        DATABASE_URL: 'postgresql://testuser:testpass@localhost:5432/testdb',
+        // Provide the mocked DB_URL here
+        DB_URL: 'postgresql://testuser:testpass@localhost:5432/testdb',
         // Include other required env variables with default or mock values
         // to satisfy the original envSchema if it's imported elsewhere.
         APP_PORT: 3001,

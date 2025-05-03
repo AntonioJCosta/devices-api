@@ -5,6 +5,7 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/node": "^22.15.3",
     "drizzle-kit": "^0.31.0",
     "tsx": "^4.19.4",
     "vitest": "^3.1.2"
@@ -13,23 +14,24 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@anatine/zod-openapi": "^2.2.8",
     "@elysiajs/swagger": "^1.2.2",
     "@vitest/coverage-v8": "^3.1.2",
     "devices-api": ".",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.43.1",
     "elysia": "^1.2.25",
+    "openapi3-ts": "^4.4.0",
     "pino": "^9.6.0",
     "postgres": "^3.4.5",
     "zod": "^3.24.3"
   },
   "scripts": {
-    "dev": "bun run --watch --loader tsx index.ts",
-    "build": "drizzle-kit generate --output ./drizzle/schema.ts",
-    "test": "vitest",
-    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
-    "db:generate:prod": "drizzle-kit generate --config=drizzle-prod.config.ts",
-    "db:push": "drizzle-kit push",
-    "db:migrate": "drizzle-kit migrate"
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
+    "test": "vitest run --coverage",
+    "start:dev": "bun run src/index.ts --watch",
+    "start:prod": "bun run src/index.ts"
   }
 }

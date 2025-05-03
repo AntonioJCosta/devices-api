@@ -5,7 +5,7 @@ import { deviceRepository } from '../src/repositories/deviceRepository'
 
 vi.mock('../src/config/env', () => ({
     env: {
-        DATABASE_URL: 'postgresql://testuser:testpass@localhost:5432/testdb',
+        DB_URL: 'postgresql://testuser:testpass@localhost:5432/testdb',
         APP_PORT: 3001,
         APP_HOST: 'localhost',
         LOG_LEVEL: 'info',

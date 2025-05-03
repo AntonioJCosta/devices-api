@@ -17,7 +17,7 @@ export default new Elysia({ prefix: '/devices' })
       summary: 'Create a new device',
       tags: ['Devices'],
       description: 'Adds a new device to the system. Requires name, brand, and state.',
-      body: { description: 'Device details: name (string, min 5), brand (string, enum, min 5), and state (enum).' },
+      body: { description: 'Device details: name (string, min 5), brand (string, enum), and state (enum).' },
       responses: {
         201: { description: 'Device created successfully' },
         400: { description: 'Invalid input data (validation error)' },

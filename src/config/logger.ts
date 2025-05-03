@@ -10,9 +10,15 @@ if (!fs.existsSync(logDir)) {
 
 const logPath = path.join(logDir, 'app.log');
 
+const streams = [
+  { level: env.LOG_LEVEL, stream: pino.destination(logPath) }, // File stream
+  { level: env.LOG_LEVEL, stream: process.stdout }, // Console stream
+];
+
 const logger = pino({
   level: env.LOG_LEVEL,
-}, pino.destination(logPath));
+}, pino.multistream(streams));
+
 
 process.on('SIGINT', () => {
   logger.info('SIGINT caught');
